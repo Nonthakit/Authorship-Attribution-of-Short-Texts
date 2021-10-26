@@ -6,7 +6,7 @@ import numpy as np
 import predict_def
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import LabelEncoder
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 np.random.seed(0)
 
 subset = None
@@ -83,7 +83,7 @@ for e in range(nb_epoch):
     start = datetime.datetime.now()
     print('Epoch: {}'.format(e))
     for x_train, y_train_ in batches:
-        f = model.train_on_batch(x_train, y_train_)
+        f = model.train_on_batch(np.asarray(x_train).astype(np.int), np.asarray(y_train_).astype(np.int))
         loss += f[0]
         loss_avg = loss / step
         accuracy += f[1]
@@ -98,7 +98,7 @@ for e in range(nb_epoch):
     test_step = 1
     
     for x_test_batch, y_test_batch in test_batches:
-        f_ev = model.test_on_batch(x_test_batch, y_test_batch)
+        f_ev = model.test_on_batch(np.asarray(x_test_batch).astype(np.int), np.asarray(y_test_batch).astype(np.int))
         test_loss += f_ev[0]
         test_loss_avg = test_loss / test_step
         test_accuracy += f_ev[1]
