@@ -38,7 +38,7 @@ cat_output = 22
 #Compile/fit params
 batch_size = 32
 torelation_epoch = 3
-nb_epoch = 20
+nb_epoch = 40
 
 print('Loading data...')
 
@@ -125,6 +125,7 @@ for e in range(nb_epoch):
     t_elap = stop - initial
     print('Epoch {}. Loss: {}. Accuracy: {}\nEpoch time: {}. Total time: {}\n'.format(e, test_loss_avg, test_accuracy_avg, e_elap, t_elap))
     if (max_acc < test_accuracy_avg):
+        max_acc = test_accuracy_avg
         model.save(sys.argv[2])
         best_epoch = e
     elif (e - best_epoch >= torelation_epoch):
