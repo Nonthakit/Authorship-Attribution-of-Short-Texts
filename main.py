@@ -4,10 +4,21 @@ import datetime
 import pandas as pd
 import numpy as np
 import predict_def
+import sys
 from sklearn.preprocessing import LabelBinarizer
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 np.random.seed(0)
+
+if (len(sys.argv) < 3):
+    print("invalid arguments")
+    print("usage: python main.py model_type saved_model_name")
+    exit()
+
+ngram = int(sys.argv[1])
+if (ngram < 1 or ngram > 2):
+    print("no such model")
+    exit()
 
 subset = None
 
@@ -26,6 +37,7 @@ cat_output = 22
 
 #Compile/fit params
 batch_size = 32
+torelation_epoch = 3
 nb_epoch = 20
 
 print('Loading data...')
@@ -52,13 +64,17 @@ vocab, reverse_vocab, vocab_size, check = predict_def.create_vocab_set()
 X_train, X_test, y_train, y_test = train_test_split(X, Y, random_state=1)
 
 print('Build model...')
-model = predict_def.model(filter_kernels, dense_outputs, maxlen, vocab_size,
+if (ngram == 1):
+    model = predict_def.model(filter_kernels, dense_outputs, maxlen, vocab_size,
                        nb_filter, cat_output)
-#model = predict_def.model2(filter_kernels, dense_outputs, maxlen, vocab_size,
-#                       nb_filter, cat_output)      For Charater Embedding use this model and change encoding function in predict_def
+else:
+    model = predict_def.model2(filter_kernels, dense_outputs, maxlen, vocab_size,
+                       nb_filter, cat_output)
 print('Fit model...') 
 initial = datetime.datetime.now()
 print (len(X_test), len(y_test))
+
+max_acc = 0
 
 for e in range(nb_epoch):
     xi, yi = predict_def.shuffle_matrix(X_train, y_train)
@@ -67,15 +83,15 @@ for e in range(nb_epoch):
         batches = predict_def.mini_batch_generator(xi[:subset], yi[:subset],
                                                     vocab, vocab_size, check,
                                                     maxlen,
-                                                    batch_size=batch_size)
+                                                    batch_size=batch_size, ngram=ngram)
     else:
         batches = predict_def.mini_batch_generator(xi, yi, vocab, vocab_size,
                                                     check, maxlen,
-                                                    batch_size=batch_size)
+                                                    batch_size=batch_size, ngram=ngram)
 
     test_batches = predict_def.mini_batch_generator(xi_test, yi_test, vocab,
                                                      vocab_size, check, maxlen,
-                                                     batch_size=batch_size)
+                                                     batch_size=batch_size,ngram=ngram)
 
     accuracy = 0.0
     loss = 0.0
@@ -108,3 +124,9 @@ for e in range(nb_epoch):
     e_elap = stop - start
     t_elap = stop - initial
     print('Epoch {}. Loss: {}. Accuracy: {}\nEpoch time: {}. Total time: {}\n'.format(e, test_loss_avg, test_accuracy_avg, e_elap, t_elap))
+    if (max_acc < test_accuracy_avg):
+        model.save(sys.argv[2])
+        best_epoch = e
+    elif (e - best_epoch >= torelation_epoch):
+        print('Accuracy doesn\'t increase for {} epoches. Training ends.\n'.format(torelation_epoch))
+        pass

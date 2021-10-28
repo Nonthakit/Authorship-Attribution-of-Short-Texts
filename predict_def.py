@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from keras.models import Model
 from tensorflow.keras.optimizers import SGD
-from keras.layers import Input, Dense, Dropout, Flatten
+from keras.layers import Input, Dense, Dropout, Flatten, Embedding
 from keras.layers.convolutional import Convolution1D, MaxPooling1D
 
 def create_vocab_set():
@@ -63,7 +63,7 @@ def model(filter_kernels, dense_outputs, maxlen, vocab_size, nb_filter,
 def model2(filter_kernels, dense_outputs, maxlen, vocab_size, nb_filter,
           cat_output):                                                  # For Character Embedding use this model instead of above model
     d = 300             #Embedding Size
-    Embedding_layer  = Embedding(vocab_size+1, d, input_length=maxlen)
+    Embedding_layer  = Embedding(vocab_size**2+1, d, input_length=maxlen)
     inputs = Input(shape=(maxlen,), name='input', dtype='float32')
     embed = Embedding_layer(inputs)
     conv = Convolution1D(nb_filter, filter_kernels[0],
@@ -103,15 +103,17 @@ def model2(filter_kernels, dense_outputs, maxlen, vocab_size, nb_filter,
 
     return model
 def mini_batch_generator(x, y, vocab, vocab_size, vocab_check, maxlen,
-                         batch_size=128):
+                         batch_size=128, ngram=1):
 
     for i in range(0, len(x), batch_size):
         x_sample = x[i:i + batch_size]
         y_sample = y[i:i + batch_size]
 
-        input_data = encode_data(x_sample, maxlen, vocab, vocab_size,
+        if (ngram == 1):
+            input_data = encode_data(x_sample, maxlen, vocab, vocab_size,
                                  vocab_check)
-        #input_data = encode_data2(x_sample, maxlen, vocab, vocab_size, vocab_check)
+        else:
+            input_data = encode_data2(x_sample, maxlen, vocab, vocab_size, vocab_check)
         yield (input_data, y_sample)
 
 def encode_data(x, maxlen, vocab, vocab_size, check):
@@ -139,7 +141,7 @@ def encode_data2(x, maxlen, vocab, vocab_size, check):              # For charac
     input_data = np.zeros((len(x), maxlen))
     for dix, sent in enumerate(x):
         counter = 0
-        chars = list(sent.lower().replace(" ", ""))
+        chars = list(sent.lower().replace(" ",""))
         chars2 = []
         for i in range(len(chars)-1):
             chars2.append(chars[i] + chars[i+1])
@@ -147,9 +149,9 @@ def encode_data2(x, maxlen, vocab, vocab_size, check):              # For charac
             if counter >= maxlen:
                 pass
             else:
-                if c in check:
+                if c[0] in check and c[1] in check:
                     counter += 1
-                    ix = vocab[c]
+                    ix = vocab[c[0]] * vocab_size + vocab[c[1]]
                     input_data[dix,counter-1] = ix
 
     return input_data
