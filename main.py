@@ -10,9 +10,9 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 np.random.seed(0)
 
-if (len(sys.argv) < 3):
+if (len(sys.argv) < 5):
     print("invalid arguments")
-    print("usage: python main.py model_type saved_model_name")
+    print("usage: python main.py model_type saved_model_name train_data validate_data")
     exit()
 
 ngram = int(sys.argv[1])
@@ -33,35 +33,43 @@ dense_outputs = 256
 #Conv layer kernel size
 filter_kernels = [3, 4, 5]
 #Number of units in the final output layer. Number of classes.
-cat_output = 22
+#cat_output = 22
 
 #Compile/fit params
 batch_size = 32
 torelation_epoch = 3
-nb_epoch = 20
+nb_epoch = 40
 
 print('Loading data...')
 
-url = 'dataset.csv'
-post = pd.read_csv(url)
-post =  post.dropna()
-post = post[post.time_stamp!='created_at']
+train_url = sys.argv[3]
+test_url = sys.argv[4]
+post_train = pd.read_csv(train_url)
+post_train =  post_train.dropna()
+post_train = post_train[post_train.time_stamp!='created_at']
+post_test = pd.read_csv(test_url)
+post_test = post_test.dropna()
+post_test = post_test[post_test.time_stamp!='created_at']
 
 feature_cols = ['raw_text']
 
 
-X = (post[feature_cols])
+X_train = (post_train[feature_cols])
+X_test = (post_test[feature_cols])
 le = LabelEncoder()
 enc = LabelBinarizer()
 print ('Converting ...')
 
-post['username'] = le.fit_transform(post['username'])
+post_train['username'] = le.fit_transform(post_train['username'])
+post_test['username'] = le.transform(post_test['username'])
 # print (list(post['username']))
-enc.fit(list(post['username']))
-Y = enc.transform(list(post['username']))
+cat_output = len(le.classes_)
+enc.fit(list(post_train['username']))
+enc.fit(list(post_test['username']))
+y_train = enc.transform(list(post_train['username']))
+y_test = enc.transform(list(post_test['username'])) 
 
 vocab, reverse_vocab, vocab_size, check = predict_def.create_vocab_set()
-X_train, X_test, y_train, y_test = train_test_split(X, Y, random_state=1)
 
 print('Build model...')
 if (ngram == 1):
@@ -130,3 +138,4 @@ for e in range(nb_epoch):
     elif (e - best_epoch >= torelation_epoch):
         print('Accuracy doesn\'t increase for {} epoches. Training ends.\n'.format(torelation_epoch))
         pass
+np.save(sys.argv[2] + '/classes.npy', le.classes_)
