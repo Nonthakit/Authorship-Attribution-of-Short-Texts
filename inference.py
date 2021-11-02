@@ -42,12 +42,15 @@ header = True;
 
 with open(sys.argv[4], mode='w') as writer:
     for i in range(0, post.shape[0], batch_size):
+        size = batch_size
+        if (i + size > post.shape[0]):
+            size = post.shape[0] - i
         if (ngram == 1):
-            X_batch = predict_def.encode_data(post.raw_text[i:i+batch_size], 
+            X_batch = predict_def.encode_data(post.raw_text[i:i+size], 
                     maxlen, vocab, vocab_size, check)
         
         else:
-            X_batch = predict_def.encode_data2(post.raw_text[i:i+batch_size], 
+            X_batch = predict_def.encode_data2(post.raw_text[i:i+size], 
                     maxlen, vocab, vocab_size, check)
         
         np.set_printoptions(threshold=sys.maxsize)
@@ -61,7 +64,7 @@ with open(sys.argv[4], mode='w') as writer:
             df = pd.DataFrame({'username': np.asarray(Y)})
             df.to_csv(writer, index=True, header=header)
         else:
-            df = pd.DataFrame({'index': range(i,i+batch_size)
+            df = pd.DataFrame({'index': range(i,i+size)
                 ,'username': np.asarray(Y)})
             df.to_csv(writer, index=False, header=header)
         header = False
