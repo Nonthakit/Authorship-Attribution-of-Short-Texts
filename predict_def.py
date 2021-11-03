@@ -1,10 +1,10 @@
 import string
 import numpy as np
 import pandas as pd
-from keras.models import Model
+from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import SGD
-from keras.layers import Input, Dense, Dropout, Flatten, Embedding
-from keras.layers.convolutional import Convolution1D, MaxPooling1D
+from tensorflow.keras.layers import Input, Dense, Dropout, Flatten, Embedding
+from tensorflow.keras.layers import Convolution1D, MaxPooling1D
 
 def create_vocab_set():
     alphabet = (list(string.ascii_lowercase) + list(string.digits) +
